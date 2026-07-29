@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>BUG_BLOG - Persistent Error Knowledge Base</title>
+    <!-- GSAP for seekable deterministic timelines -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: 'Fira Code';
+        font-style: normal;
+        font-weight: 400;
+        src: local('Fira Code'), monospace;
+      }
+      @font-face {
+        font-family: 'Share Tech Mono';
+        font-style: normal;
+        font-weight: 400;
+        src: local('Share Tech Mono'), monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #050a05;
+        font-family: 'Fira Code', 'Share Tech Mono', 'JetBrains Mono', monospace;
+        color: #00ff41;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* CRT Scanlines and Matrix Grid Overlay */
+      .bg-grid {
+        position: absolute;
+        inset: 0;
+        background-image: 
+          linear-gradient(to right, rgba(0, 255, 65, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: 1;
+      }
+
+      .crt-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          rgba(18, 16, 16, 0) 50%, 
+          rgba(0, 0, 0, 0.25) 50%
+        );
+        background-size: 100% 4px;
+        z-index: 999;
+        opacity: 0.7;
+      }
+
+      .vignette {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(2, 8, 2, 0.9) 100%);
+        z-index: 998;
+      }
+
+      /* Root Composition Container */
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #050a05;
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 2;
+      }
+
+      /* Neon Text Utility */
+      .neon-glow {
+        text-shadow: 0 0 12px rgba(0, 255, 65, 0.8), 0 0 25px rgba(0, 255, 65, 0.4);
+      }
+      .neon-glow-red {
+        text-shadow: 0 0 12px rgba(255, 51, 51, 0.8), 0 0 25px rgba(255, 51, 51, 0.4);
+        color: #ff3333;
+      }
+
+      /* Corner Bracket styling */
+      .bracket-container {
+        position: relative;
+        padding: 40px 60px;
+        background: rgba(10, 21, 10, 0.75);
+        border: 1px solid rgba(0, 255, 65, 0.22);
+        box-shadow: 0 0 40px rgba(0, 255, 65, 0.08);
+      }
+      .corner-tl, .corner-tr, .corner-bl, .corner-br {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border-color: #00ff41;
+        border-style: solid;
+      }
+      .corner-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
+      .corner-tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; }
+      .corner-bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; }
+      .corner-br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; }
+
+      /* SCENE 1 STYLES */
+      .scene1-terminal {
+        font-size: 22px;
+        color: #00882a;
+        margin-bottom: 24px;
+        letter-spacing: 3px;
+      }
+      .scene1-title {
+        font-size: 96px;
+        font-weight: 700;
+        letter-spacing: 8px;
+        line-height: 1;
+        margin-bottom: 16px;
+        color: #00ff41;
+      }
+      .scene1-subtitle {
+        font-size: 22px;
+        color: #00882a;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+      }
+      .scene1-chips {
+        display: flex;
+        gap: 20px;
+        margin-top: 40px;
+      }
+      .chip-item {
+        padding: 10px 20px;
+        background: rgba(13, 31, 13, 0.8);
+        border: 1px solid rgba(0, 255, 65, 0.3);
+        font-size: 17px;
+        letter-spacing: 1.5px;
+        color: #00ff41;
+      }
+
+      /* SCENE 2 STYLES (Form / Code Entry) */
+      .form-window {
+        width: 1400px;
+        height: 760px;
+        background: #0a150a;
+        border: 1px solid rgba(0, 255, 65, 0.3);
+        box-shadow: 0 0 50px rgba(0, 255, 65, 0.12);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .form-header {
+        height: 48px;
+        background: #0d1f0d;
+        border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 12px;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .dot-red { background: rgba(239, 68, 68, 0.75); }
+      .dot-yellow { background: rgba(234, 179, 8, 0.75); }
+      .dot-green { background: rgba(0, 255, 65, 0.75); }
+      .form-title {
+        flex: 1;
+        text-align: center;
+        font-size: 15px;
+        color: #00882a;
+        letter-spacing: 2px;
+      }
+      .form-body {
+        flex: 1;
+        display: flex;
+        padding: 30px;
+        gap: 30px;
+        position: relative;
+      }
+      .form-fields-left {
+        flex: 1.2;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .field-label {
+        font-size: 14px;
+        color: #00882a;
+        letter-spacing: 1.5px;
+      }
+      .field-input {
+        background: rgba(0, 255, 65, 0.04);
+        border: 1px solid rgba(0, 255, 65, 0.25);
+        padding: 12px 16px;
+        font-size: 18px;
+        color: #00ff41;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .badges-row {
+        display: flex;
+        gap: 12px;
+      }
+      .badge-btn {
+        padding: 8px 16px;
+        border: 1px solid rgba(0, 255, 65, 0.2);
+        font-size: 13px;
+        background: rgba(0, 255, 65, 0.03);
+        color: #00882a;
+      }
+      .badge-btn-active-critical {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.5);
+        color: #f87171;
+        font-weight: 700;
+      }
+      .badge-btn-active-solved {
+        background: rgba(0, 255, 65, 0.15);
+        border-color: #00ff41;
+        color: #00ff41;
+        font-weight: 700;
+      }
+
+      .code-editor-box {
+        flex: 1.1;
+        background: #050a05;
+        border: 1px solid rgba(0, 255, 65, 0.25);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .code-line {
+        display: flex;
+        gap: 16px;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      .line-num {
+        color: #00882a;
+        opacity: 0.5;
+        width: 25px;
+        text-align: right;
+      }
+      .submit-status-card {
+        position: absolute;
+        right: 40px;
+        bottom: 40px;
+        width: 440px;
+        background: #0d1f0d;
+        border: 1px solid #00ff41;
+        box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+        padding: 20px;
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      /* SCENE 3 STYLES (Dashboard Metrics) */
+      .dashboard-container {
+        width: 1500px;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+      .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+        padding-bottom: 12px;
+      }
+      .stats-counter-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      .stat-counter-box {
+        background: rgba(10, 21, 10, 0.8);
+        border: 1px solid rgba(0, 255, 65, 0.2);
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .stat-num {
+        font-size: 48px;
+        font-weight: 700;
+      }
+      .stat-title {
+        font-size: 13px;
+        color: #00882a;
+        letter-spacing: 2px;
+      }
+
+      .table-box {
+        background: rgba(10, 21, 10, 0.8);
+        border: 1px solid rgba(0, 255, 65, 0.2);
+      }
+      .table-header-row {
+        display: grid;
+        grid-template-columns: 1fr 140px 120px 100px 100px;
+        gap: 16px;
+        padding: 14px 20px;
+        background: #0a150a;
+        border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+        font-size: 13px;
+        color: #00882a;
+        letter-spacing: 2px;
+      }
+      .table-data-row {
+        display: grid;
+        grid-template-columns: 1fr 140px 120px 100px 100px;
+        gap: 16px;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+        font-size: 15px;
+        align-items: center;
+      }
+
+      /* SCENE 4 STYLES (Outro) */
+      .outro-box {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+      }
+      .outro-title {
+        font-size: 88px;
+        font-weight: 700;
+        letter-spacing: 6px;
+      }
+      .outro-tagline {
+        font-size: 24px;
+        color: #00882a;
+        letter-spacing: 3px;
+        max-width: 900px;
+      }
+      .stack-grid {
+        display: flex;
+        gap: 20px;
+        margin-top: 10px;
+      }
+      .stack-badge {
+        padding: 12px 24px;
+        background: rgba(13, 31, 13, 0.9);
+        border: 1px solid #00ff41;
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.15);
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 2px;
+      }
+      .cta-buttons {
+        display: flex;
+        gap: 30px;
+        margin-top: 20px;
+      }
+      .btn-cta {
+        padding: 18px 40px;
+        background: #00ff41;
+        color: #000;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        box-shadow: 0 0 35px rgba(0, 255, 65, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-j7pz" id="root" data-composition-id="main" data-start="0" data-duration="30" data-width="1920" data-height="1080">
+      
+      <!-- Background overlays -->
+      <div data-hf-id="hf-yqqm" class="bg-grid"></div>
+      <div data-hf-id="hf-q7bi" class="vignette"></div>
+      <div data-hf-id="hf-dnm2" class="crt-overlay"></div>
+
+      <!-- SCENE 1: Initializing Error Knowledge Base (0s - 7.5s) -->
+      <div data-hf-id="hf-fht4" id="scene1" class="clip" data-start="0" data-duration="7.5" data-track-index="1">
+        <div data-hf-id="hf-fw8o" class="bracket-container" id="s1-box">
+          <div data-hf-id="hf-3fjc" class="corner-tl"></div><div data-hf-id="hf-krb2" class="corner-tr"></div>
+          <div data-hf-id="hf-1uv6" class="corner-bl"></div><div data-hf-id="hf-9r38" class="corner-br"></div>
+          
+          <div data-hf-id="hf-mj1j" class="scene1-terminal" id="s1-cmd">&gt; Initializing error knowledge base...</div>
+          <h1 data-hf-id="hf-2fw4" class="scene1-title neon-glow" id="s1-title">BUG_BLOG</h1>
+          <div data-hf-id="hf-s4hh" class="scene1-subtitle" id="s1-sub">PERSISTENT ERROR KNOWLEDGE BASE &#160;·&#160; v1.0.0</div>
+        </div>
+
+        <div data-hf-id="hf-hi47" class="scene1-chips" id="s1-chips">
+          <div data-hf-id="hf-qb9x" class="chip-item">[01] BUG LOGGING &amp; PERSISTENCE</div>
+          <div data-hf-id="hf-v81t" class="chip-item">[02] CODE SNIPPET EDITOR</div>
+          <div data-hf-id="hf-izqt" class="chip-item">[03] SEVERITY &amp; CATEGORY TAGGING</div>
+          <div data-hf-id="hf-frnn" class="chip-item">[04] KNOWLEDGE BASE DASHBOARD</div>
+        </div>
+      </div>
+
+      <!-- SCENE 2: Log New Bug Entry (7.5s - 15s) -->
+      <div data-hf-id="hf-8tnz" id="scene2" class="clip" data-start="7.5" data-duration="7.5" data-track-index="1">
+        <div data-hf-id="hf-bti5" class="form-window" id="s2-form">
+          <div data-hf-id="hf-vgk4" class="form-header">
+            <div data-hf-id="hf-5wte" class="dot dot-red"></div>
+            <div data-hf-id="hf-6a95" class="dot dot-yellow"></div>
+            <div data-hf-id="hf-0zde" class="dot dot-green"></div>
+            <div data-hf-id="hf-36pz" class="form-title">bug_log_entry.sh — /dev/stdin</div>
+          </div>
+          <div data-hf-id="hf-fxrf" class="form-body">
+            <div data-hf-id="hf-1s6q" class="form-fields-left">
+              <div data-hf-id="hf-7w46" class="field-group">
+                <div data-hf-id="hf-0gib" class="field-label">// BUG_CODE</div>
+                <div data-hf-id="hf-3f5i" class="field-input">BUG-2026-001</div>
+              </div>
+              <div data-hf-id="hf-kygf" class="badges-row">
+                <div data-hf-id="hf-ornx" class="field-group" style="flex: 1;">
+                  <div data-hf-id="hf-ltpd" class="field-label">// CATEGORY</div>
+                  <div data-hf-id="hf-8m4m" class="field-input" style="font-size: 16px;">Runtime</div>
+                </div>
+                <div data-hf-id="hf-4mdd" class="field-group" style="flex: 1;">
+                  <div data-hf-id="hf-peea" class="field-label">// SEVERITY</div>
+                  <div data-hf-id="hf-7rwy" class="badge-btn badge-btn-active-critical">CRITICAL</div>
+                </div>
+                <div data-hf-id="hf-5tag" class="field-group" style="flex: 1;">
+                  <div data-hf-id="hf-bwgv" class="field-label">// STATUS</div>
+                  <div data-hf-id="hf-7deu" class="badge-btn badge-btn-active-solved" id="s2-status-badge">SOLVED</div>
+                </div>
+              </div>
+              <div data-hf-id="hf-633u" class="field-group">
+                <div data-hf-id="hf-w08p" class="field-label">// DESCRIPTION</div>
+                <div data-hf-id="hf-vuqb" class="field-input" style="font-size: 15px; color: #00cc33;">
+                  TypeError: Cannot read properties of undefined (reading 'id') during user session lookup.
+                </div>
+              </div>
+            </div>
+
+            <div data-hf-id="hf-mqzb" class="code-editor-box">
+              <div data-hf-id="hf-xafe" style="display: flex; justify-content: space-between; font-size: 13px; color: #00882a; margin-bottom: 8px;">
+                <span data-hf-id="hf-pzxu">// CODE_SNIPPET</span>
+                <span data-hf-id="hf-9aym">Language: [ TypeScript ]</span>
+              </div>
+              <div data-hf-id="hf-7lnr" class="code-line"><span data-hf-id="hf-kqrv" class="line-num">1</span><span data-hf-id="hf-04en" style="color: #ff79c6;">const</span> <span data-hf-id="hf-97qv" style="color: #50fa7b;">fetchUser</span> = <span data-hf-id="hf-5m6o" style="color: #ff79c6;">async</span> (id: <span data-hf-id="hf-4nhq" style="color: #8be9fd;">string</span>) =&gt; {</div>
+              <div data-hf-id="hf-rf2y" class="code-line"><span data-hf-id="hf-kcgu" class="line-num">2</span>&#160;&#160;<span data-hf-id="hf-tsvj" style="color: #ff79c6;">const</span> res = <span data-hf-id="hf-jp7y" style="color: #ff79c6;">await</span> api.<span data-hf-id="hf-shxn" style="color: #50fa7b;">getUser</span>(id);</div>
+              <div data-hf-id="hf-dlwc" class="code-line"><span data-hf-id="hf-jy5t" class="line-num">3</span>&#160;&#160;<span data-hf-id="hf-qtde" style="color: #ff79c6;">return</span> res?.data?.user;</div>
+              <div data-hf-id="hf-3xpa" class="code-line"><span data-hf-id="hf-jjus" class="line-num">4</span>};</div>
+            </div>
+
+            <div data-hf-id="hf-kt9h" class="submit-status-card" id="s2-status-card">
+              <div data-hf-id="hf-8g4e" style="color: #00ff41; font-weight: 700; margin-bottom: 6px;">&gt; BUG LOG ENTRY STATUS:</div>
+              <div data-hf-id="hf-91s1">&gt; Writing record to database... <span data-hf-id="hf-uhka" style="color: #00ff41;">DONE</span></div>
+              <div data-hf-id="hf-vige">&gt; Validating integrity... <span data-hf-id="hf-hcl0" style="color: #00ff41;">OK</span></div>
+              <div data-hf-id="hf-7dwe">&gt; Status: <span data-hf-id="hf-wmif" style="color: #00ff41; font-weight: 700;">SOLVED</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 3: Dashboard & Stats Index (15s - 22.5s) -->
+      <div data-hf-id="hf-zgpc" id="scene3" class="clip" data-start="15" data-duration="7.5" data-track-index="1">
+        <div data-hf-id="hf-f803" class="dashboard-container" id="s3-dash">
+          <div data-hf-id="hf-iw6u" class="dashboard-header">
+            <div data-hf-id="hf-9ifm" style="font-size: 32px; font-weight: 700; letter-spacing: 3px;" class="neon-glow">BUG_BLOG &#160;·&#160; KNOWLEDGE BASE</div>
+            <div data-hf-id="hf-sup7" style="font-size: 16px; color: #00882a;">&gt; FILTER: [ ALL RECORDS ]</div>
+          </div>
+
+          <div data-hf-id="hf-fdw1" class="stats-counter-row">
+            <div data-hf-id="hf-j895" class="stat-counter-box" id="s3-stat1">
+              <div data-hf-id="hf-yeow">
+                <div data-hf-id="hf-a6fx" class="stat-num" style="color: #00ff41;">42</div>
+                <div data-hf-id="hf-62lz" class="stat-title">TOTAL_BUGS</div>
+              </div>
+            </div>
+            <div data-hf-id="hf-n6d6" class="stat-counter-box" id="s3-stat2">
+              <div data-hf-id="hf-y7yw">
+                <div data-hf-id="hf-e6w9" class="stat-num" style="color: #ff3333;">3</div>
+                <div data-hf-id="hf-l496" class="stat-title">CRITICAL</div>
+              </div>
+            </div>
+            <div data-hf-id="hf-r4h7" class="stat-counter-box" id="s3-stat3">
+              <div data-hf-id="hf-x11t">
+                <div data-hf-id="hf-q9pn" class="stat-num" style="color: #00ff41;">31</div>
+                <div data-hf-id="hf-ztpi" class="stat-title">SOLVED</div>
+              </div>
+            </div>
+            <div data-hf-id="hf-3mzo" class="stat-counter-box" id="s3-stat4">
+              <div data-hf-id="hf-xfcu">
+                <div data-hf-id="hf-lek4" class="stat-num" style="color: #ff9933;">8</div>
+                <div data-hf-id="hf-sqc7" class="stat-title">OPEN</div>
+              </div>
+            </div>
+          </div>
+
+          <div data-hf-id="hf-ef5b" class="table-box" id="s3-table">
+            <div data-hf-id="hf-xqch" class="table-header-row">
+              <span data-hf-id="hf-q1gl">DESCRIPTION</span>
+              <span data-hf-id="hf-m071">CATEGORY</span>
+              <span data-hf-id="hf-nsji">SEVERITY</span>
+              <span data-hf-id="hf-rkyr">STATUS</span>
+              <span data-hf-id="hf-m42l">DATE</span>
+            </div>
+            <div data-hf-id="hf-g0n6" class="table-data-row">
+              <span data-hf-id="hf-5r5g" style="color: #00cc33;">BUG-2026-001: TypeError in user session lookup</span>
+              <span data-hf-id="hf-kwyw" style="color: #00882a;">Runtime</span>
+              <span data-hf-id="hf-kdi4" style="color: #ff3333; font-weight: 700;">CRITICAL</span>
+              <span data-hf-id="hf-zyev" style="color: #00ff41; font-weight: 700;">SOLVED</span>
+              <span data-hf-id="hf-e5js" style="color: #00882a;">Jul 29</span>
+            </div>
+            <div data-hf-id="hf-5vhi" class="table-data-row">
+              <span data-hf-id="hf-fb7d" style="color: #00cc33;">BUG-2026-002: High memory usage during heavy query</span>
+              <span data-hf-id="hf-yrz6" style="color: #00882a;">Performance</span>
+              <span data-hf-id="hf-x529" style="color: #ff9933; font-weight: 700;">HIGH</span>
+              <span data-hf-id="hf-vn7x" style="color: #ff9933; font-weight: 700;">OPEN</span>
+              <span data-hf-id="hf-dr8r" style="color: #00882a;">Jul 28</span>
+            </div>
+            <div data-hf-id="hf-69sj" class="table-data-row">
+              <span data-hf-id="hf-s2vi" style="color: #00cc33;">BUG-2026-003: Mobile navbar menu alignment shift</span>
+              <span data-hf-id="hf-8k3y" style="color: #00882a;">UI</span>
+              <span data-hf-id="hf-56vw" style="color: #00ff41; font-weight: 700;">LOW</span>
+              <span data-hf-id="hf-zk3u" style="color: #00ff41; font-weight: 700;">SOLVED</span>
+              <span data-hf-id="hf-ey5u" style="color: #00882a;">Jul 27</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 4: Outro & System Status (22.5s - 30s) -->
+      <div data-hf-id="hf-1xc4" id="scene4" class="clip" data-start="22.5" data-duration="7.5" data-track-index="1">
+        <div data-hf-id="hf-zaaa" class="outro-box" id="s4-box">
+          <div data-hf-id="hf-z5sg" class="bracket-container" style="padding: 30px 50px;">
+            <div data-hf-id="hf-jdy8" class="corner-tl"></div><div data-hf-id="hf-j8rm" class="corner-tr"></div>
+            <div data-hf-id="hf-3e92" class="corner-bl"></div><div data-hf-id="hf-gduk" class="corner-br"></div>
+            <h1 data-hf-id="hf-4vxn" class="outro-title neon-glow">BUG_BLOG</h1>
+          </div>
+
+          <div data-hf-id="hf-fipm" class="outro-tagline" id="s4-tagline">
+            PERSISTENT ERROR KNOWLEDGE BASE &#160;·&#160; v1.0.0
+          </div>
+
+          <div data-hf-id="hf-ejsx" class="stack-grid" id="s4-stack">
+            <div data-hf-id="hf-fh8d" class="stack-badge">REACT</div>
+            <div data-hf-id="hf-m9op" class="stack-badge">TYPESCRIPT</div>
+            <div data-hf-id="hf-mvh4" class="stack-badge">SUPABASE</div>
+            <div data-hf-id="hf-clnh" class="stack-badge">TAILWIND CSS</div>
+          </div>
+
+          <div data-hf-id="hf-hvbk" class="cta-buttons" id="s4-cta">
+            <div data-hf-id="hf-1y4w" class="btn-cta">+ LOG NEW BUG</div>
+          </div>
+
+          <div data-hf-id="hf-z0o9" style="font-size: 15px; color: #00882a; letter-spacing: 2px; margin-top: 15px;">
+            SYS: ONLINE &#160;·&#160; UPTIME: 99.97%
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GSAP Seekable Timeline Construction -->
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // ==========================================
+      // SCENE 1 ANIMATIONS (0s to 7.5s)
+      // ==========================================
+      tl.from("#s1-box", { duration: 1.2, scale: 0.85, opacity: 0, ease: "power3.out" }, 0.2);
+      tl.from("#s1-cmd", { duration: 0.8, opacity: 0, y: -15, ease: "power2.out" }, 0.5);
+      tl.from("#s1-title", { duration: 1.4, opacity: 0, scale: 1.1, ease: "expo.out" }, 0.9);
+      tl.from("#s1-sub", { duration: 1.0, opacity: 0, y: 15, ease: "power2.out" }, 1.3);
+      tl.from("#s1-chips .chip-item", { duration: 0.6, opacity: 0, y: 20, stagger: 0.15, ease: "back.out(1.4)" }, 2.0);
+
+      // Scene 1 Exit
+      tl.to("#s1-box", { duration: 0.8, opacity: 0, scale: 0.9, ease: "power2.in" }, 6.5);
+      tl.to("#s1-chips", { duration: 0.6, opacity: 0, y: -20, ease: "power2.in" }, 6.5);
+      tl.set("#s1-box", { opacity: 0 }, 7.5);
+      tl.set("#s1-chips", { opacity: 0 }, 7.5);
+
+      // ==========================================
+      // SCENE 2 ANIMATIONS (7.5s to 15s)
+      // ==========================================
+      tl.from("#s2-form", { duration: 1.2, opacity: 0, y: 80, scale: 0.95, ease: "power3.out" }, 7.7);
+      tl.from("#s2-status-card", { duration: 0.8, opacity: 0, x: 50, ease: "power3.out" }, 9.5);
+
+      // Scene 2 Exit
+      tl.to("#s2-form", { duration: 0.8, opacity: 0, scale: 0.9, y: -50, ease: "power2.in" }, 14.2);
+      tl.set("#s2-form", { opacity: 0 }, 15.0);
+
+      // ==========================================
+      // SCENE 3 ANIMATIONS (15s to 22.5s)
+      // ==========================================
+      tl.from("#s3-dash", { duration: 1.0, opacity: 0, scale: 0.95, ease: "power3.out" }, 15.2);
+      tl.from("#s3-stat1", { duration: 0.5, opacity: 0, y: 25, ease: "power2.out" }, 15.6);
+      tl.from("#s3-stat2", { duration: 0.5, opacity: 0, y: 25, ease: "power2.out" }, 15.8);
+      tl.from("#s3-stat3", { duration: 0.5, opacity: 0, y: 25, ease: "power2.out" }, 16.0);
+      tl.from("#s3-stat4", { duration: 0.5, opacity: 0, y: 25, ease: "power2.out" }, 16.2);
+      tl.from("#s3-table", { duration: 0.8, opacity: 0, y: 25, ease: "power2.out" }, 16.6);
+
+      // Scene 3 Exit
+      tl.to("#s3-dash", { duration: 0.8, opacity: 0, scale: 1.05, ease: "power2.in" }, 21.7);
+      tl.set("#s3-dash", { opacity: 0 }, 22.5);
+
+      // ==========================================
+      // SCENE 4 ANIMATIONS (22.5s to 30s)
+      // ==========================================
+      tl.from("#s4-box", { duration: 1.2, opacity: 0, scale: 0.9, ease: "power3.out" }, 22.8);
+      tl.from("#s4-tagline", { duration: 0.8, opacity: 0, y: 20, ease: "power2.out" }, 23.5);
+      tl.from("#s4-stack .stack-badge", { duration: 0.6, opacity: 0, y: 25, stagger: 0.12, ease: "back.out(1.4)" }, 24.2);
+      tl.from("#s4-cta", { duration: 0.8, opacity: 0, scale: 0.9, ease: "power2.out" }, 25.5);
+
+      // Final Fade Out
+      tl.to("#root", { duration: 0.8, opacity: 0, ease: "power2.in" }, 29.2);
+
+      // Register master timeline on window for HyperFrames
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

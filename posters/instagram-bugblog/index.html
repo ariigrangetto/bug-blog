@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, height=1080, initial-scale=1.0" />
+  <title>BugBlog - Instagram Post</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="composition" class="clip" data-composition-id="instagram-bugblog" data-width="1080" data-height="1080" data-frame-rate="30" data-duration="1" data-start="0">
+    <!-- Canvas for Matrix Rain Backdrop -->
+    <canvas id="matrix-canvas" width="1080" height="1080"></canvas>
+
+    <!-- Matrix Neon Cyber Background & Vignette -->
+    <div class="bg-glow bg-glow-green"></div>
+    <div class="bg-glow bg-glow-cyber"></div>
+    <div class="bg-glow bg-glow-amber"></div>
+    <div class="bg-grid"></div>
+
+    <div class="container">
+      <!-- Top Brand Bar -->
+      <header class="header">
+        <div class="logo-badge">
+          <svg class="bug-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="m8 2 1.88 1.88M14.12 3.88 16 2M9 7.13v-1a3 3 0 1 1 6 0v1M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6ZM12 20v-9M6.53 9C4.6 9.8 3.22 11.5 3 13.6M17.47 9c1.93.8 3.31 2.5 3.53 4.6M4 19c1.8-.7 3.3-2.1 4-4M20 19c-1.8-.7-3.3-2.1-4-4"/>
+          </svg>
+          <span class="logo-text">BUG_BLOG</span>
+          <span class="cursor-blink">_</span>
+        </div>
+        <div class="category-pill">&gt;_ TERMINAL WORKSPACE</div>
+      </header>
+
+      <!-- Main Headline Section -->
+      <section class="hero-section">
+        <h1 class="main-title">
+          DON'T LET BUGS <br/>
+          <span class="glow-text">FADE AWAY_</span>
+        </h1>
+        <p class="subtitle font-mono">
+          <span class="comment-prefix">//</span> The ultimate terminal-inspired workspace to log errors, document solutions, and build your developer index.
+        </p>
+      </section>
+
+      <!-- Cyber Terminal / Code Editor Window -->
+      <main class="mockup-window cyber-card">
+        <div class="window-header">
+          <div class="window-controls">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="window-title font-mono">auth_listener_fix.tsx</div>
+          <div class="status-tag status-resolved">
+            <span class="status-dot"></span> RESOLVED
+          </div>
+        </div>
+
+        <div class="code-container font-mono">
+          <div class="code-line"><span class="line-num">1</span> <span class="keyword">export async function</span> <span class="func">resolveIssue</span>(<span class="param">bugId</span>: <span class="type">string</span>) {</div>
+          <div class="code-line"><span class="line-num">2</span>   <span class="comment">// 🐛 Fix memory leak in auth state listener</span></div>
+          <div class="code-line"><span class="line-num">3</span>   <span class="keyword">const</span> { <span class="prop">data</span>, <span class="prop">error</span> } = <span class="keyword">await</span> <span class="func">bugblog</span>.<span class="func">bugs</span>.<span class="func">update</span>({</div>
+          <div class="code-line"><span class="line-num">4</span>     <span class="prop">id</span>: bugId,</div>
+          <div class="code-line"><span class="line-num">5</span>     <span class="prop">status</span>: <span class="string">'RESOLVED'</span>,</div>
+          <div class="code-line"><span class="line-num">6</span>     <span class="prop">solution</span>: <span class="string">'Cleanup subscription on component unmount'</span></div>
+          <div class="code-line"><span class="line-num">7</span>   });</div>
+          <div class="code-line"><span class="line-num">8</span>   <span class="keyword">return</span> data;</div>
+          <div class="code-line"><span class="line-num">9</span> }</div>
+        </div>
+      </main>
+
+      <!-- Feature Grid -->
+      <footer class="features-grid">
+        <div class="feature-card cyber-card">
+          <div class="feature-icon text-green">&gt;_</div>
+          <div class="feature-info">
+            <h3 class="vt323-title">INSTANT_LOGGING</h3>
+            <p class="font-mono">Log bugs & stack traces in seconds</p>
+          </div>
+        </div>
+
+        <div class="feature-card cyber-card">
+          <div class="feature-icon text-cyber">&lt;/&gt;</div>
+          <div class="feature-info">
+            <h3 class="vt323-title">CODE_SNIPPETS</h3>
+            <p class="font-mono">Interactive editor & syntax view</p>
+          </div>
+        </div>
+
+        <div class="feature-card cyber-card">
+          <div class="feature-icon text-amber">#_</div>
+          <div class="feature-info">
+            <h3 class="vt323-title">SOLUTION_INDEX</h3>
+            <p class="font-mono">Searchable developer knowledge base</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+  
+  <script>
+    // Draw Static Matrix Rain Backdrop
+    function drawMatrixRain() {
+      const canvas = document.getElementById('matrix-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const fontSize = 18;
+      const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロ0123456789ABCDEF@#$%<>{}[]/*+~";
+      const cols = Math.floor(1080 / fontSize);
+
+      ctx.fillStyle = '#050a05';
+      ctx.fillRect(0, 0, 1080, 1080);
+      ctx.font = fontSize + 'px monospace';
+
+      // Seeded random for deterministic snapshots
+      let seed = 42;
+      function random() {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      }
+
+      for (let i = 0; i < cols; i++) {
+        const x = i * fontSize;
+        const trailLength = Math.floor(random() * 25) + 12;
+        const startY = Math.floor(random() * (1080 / fontSize));
+
+        for (let j = 0; j < trailLength; j++) {
+          const charY = (startY - j + Math.floor(1080 / fontSize)) % Math.floor(1080 / fontSize) * fontSize;
+          const char = chars[Math.floor(random() * chars.length)];
+
+          if (j === 0) {
+            // Glowing Head Character
+            ctx.fillStyle = '#e0ffff';
+            ctx.shadowColor = '#00ff41';
+            ctx.shadowBlur = 10;
+          } else {
+            // Fading Green Body Trail
+            const alpha = Math.max(0.05, (1 - j / trailLength) * 0.45);
+            ctx.fillStyle = 'rgba(0, 255, 65, ' + alpha + ')';
+            ctx.shadowBlur = 0;
+          }
+          ctx.fillText(char, x, charY);
+        }
+      }
+    }
+
+    drawMatrixRain();
+
+    window.__timelines = window.__timelines || {};
+    window.__timelines['instagram-bugblog'] = {
+      duration: 1,
+      seek: function(t) { drawMatrixRain(); }
+    };
+  </script>
+</body>
+</html>
