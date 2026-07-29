@@ -1,3 +1,6 @@
+<img width="1080" height="1080" alt="instagram_bugblog_post" src="https://github.com/user-attachments/assets/04214f8d-fed5-44e5-b652-07c881f84b6b" />
+
+
 # 🐛 BugBlog
 
 A modern, developer-focused web application designed to log, track, manage, and document software bugs and code solutions. **BugBlog** combines a sleek hacker aesthetic with robust bug-tracking capabilities, featuring custom code editors, real-time filtering, syntax classification, and secure multi-user authentication.
@@ -186,3 +189,5 @@ Feel free to check the repository issues or submit a pull request.
 ## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).
+
+https://github.com/user-attachments/assets/36eb2c04-e406-4165-88a5-10a5d398b5d0
