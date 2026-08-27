@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-comment-textnodes */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import Cursor from '../../features/Cursor.tsx';
 import AuthShell from '../../features/AuthShell.tsx';
 import Client from '../../services/clients.ts';
@@ -23,6 +23,8 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSuccess(false);
+    setError('');
+    setPwMatch(true);
 
     if (!email.trim() || !password || !confirmPassword) {
       setError('ALL FIELDS ARE REQUIRED.');
@@ -31,7 +33,7 @@ export default function Register() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('INVALID EMAIL ADDRESS');
+      setError('INVALID EMAIL ADDRESS.');
       return;
     }
 
@@ -42,22 +44,26 @@ export default function Register() {
 
     if (password !== confirmPassword) {
       setPwMatch(false);
+      setError('PASSWORDS DO NOT MATCH.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const { error: signUpError } = await Client.createClient(email, password);
+      const { data, error: signUpError } = await Client.createClient(email, password);
 
       if (signUpError) {
         let friendlyMessage = signUpError.message;
-        if (signUpError.message.toLowerCase().includes('user already registered')) {
-          friendlyMessage = 'This email address is already registered.';
-        } else if (signUpError.message.toLowerCase().includes('rate limit')) {
-          friendlyMessage = 'Too many registration requests. Please try again later.';
+        const msgLower = signUpError.message.toLowerCase();
+        if (msgLower.includes('user already registered') || msgLower.includes('already exists') || msgLower.includes('user_already_exists')) {
+          friendlyMessage = 'THIS EMAIL ADDRESS IS ALREADY REGISTERED. PLEASE LOG IN.';
+        } else if (msgLower.includes('rate limit')) {
+          friendlyMessage = 'TOO MANY REGISTRATION REQUESTS. PLEASE TRY AGAIN LATER.';
         }
         setError(friendlyMessage);
+      } else if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setError('THIS EMAIL ADDRESS IS ALREADY REGISTERED. PLEASE LOG IN.');
       } else {
         setSuccess(true);
         setEmail('');
@@ -96,8 +102,8 @@ export default function Register() {
         <div className="p-6">
           {
             error && (
-              <div className="py-10 text-center">
-                <CheckCircle size={40} className="text-[#ff0000a1] glow mx-auto mb-4" />
+              <div className="py-4 text-center">
+                <AlertCircle size={36} className="text-[#ff0000a1] glow mx-auto mb-3" />
                 <div className="font-['VT323'] text-lg text-[#ff0000a1] glow mb-3" style={{ animation: "flicker 2s ease-in-out infinite" }}>
                   {error}
                 </div>
